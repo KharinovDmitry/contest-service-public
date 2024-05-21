@@ -1,0 +1,5 @@
+port: 8080
+сonn_str: ""
+env: "local"
+jwtSecret: ""
+migrations_path: "./migrations"

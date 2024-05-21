@@ -1,0 +1,509 @@
+definitions:
+  dto.LaunchDTO:
+    properties:
+      code:
+        type: string
+      contest_id:
+        type: integer
+      date:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      points:
+        type: integer
+      result_code:
+        allOf:
+        - $ref: '#/definitions/enum.TestResultCode'
+        description: '@Model domain.TestResultCode'
+      user_id:
+        type: integer
+    type: object
+  dto.TaskDTO:
+    properties:
+      id:
+        type: integer
+      memory_limit:
+        type: integer
+      text:
+        type: string
+      time_limit:
+        type: integer
+      title:
+        type: string
+    type: object
+  dto.TestDTO:
+    properties:
+      expectedResult:
+        type: string
+      id:
+        type: integer
+      input:
+        type: string
+      points:
+        type: integer
+      taskID:
+        type: integer
+    type: object
+  enum.Language:
+    description: CPP - C++, Python - Python,
+    enum:
+    - CPP
+    - Python
+    - C#
+    - JS
+    type: string
+    x-enum-varnames:
+    - CPP
+    - Python
+    - CSharp
+    - JavaScript
+  enum.TestResultCode:
+    description: TL - Превышено ограничение по времени, ML - Превышено ограничение
+      по памяти, CE - Ошибка компиляции, RE - Ошибка во время выполнения, SC - Успешное
+      выполнение, IA - Неверный ответ
+    enum:
+    - TL
+    - ML
+    - CE
+    - RE
+    - SC
+    - IA
+    type: string
+    x-enum-varnames:
+    - TimeLimitCode
+    - MemoryLimitCode
+    - CompileErrorCode
+    - RuntimeErrorCode
+    - SuccessCode
+    - IncorrectAnswerCode
+  handlers.AddTaskRequest:
+    properties:
+      text:
+        type: string
+      title:
+        type: string
+    type: object
+  handlers.AddTestRequest:
+    properties:
+      expectedResult:
+        type: string
+      input:
+        type: string
+      points:
+        example: "0"
+        type: string
+      taskID:
+        example: "0"
+        type: string
+    type: object
+  handlers.RunError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  handlers.RunTestRequest:
+    properties:
+      code:
+        type: string
+      language:
+        allOf:
+        - $ref: '#/definitions/enum.Language'
+        description: '@Model enum.Language'
+      task_id:
+        type: integer
+    type: object
+  handlers.RunTestResponse:
+    properties:
+      description:
+        type: string
+      points:
+        example: "0"
+        type: string
+      result_code:
+        description: '@Model enum.TestResultCode'
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Contest Service API
+  version: "1.0"
+paths:
+  /api/launches/{user_id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.LaunchDTO'
+            type: array
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение результатов решения задач конкретным пользователем
+      tags:
+      - Launch
+  /api/launches/{user_id}/{contest_id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: Contest ID
+        in: path
+        name: contest_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.LaunchDTO'
+            type: array
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение результатов решения конкретной задачи конкретным пользователем
+      tags:
+      - Launch
+  /api/launches/success/{user_id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.LaunchDTO'
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение результатов успешных решений задач конкретным пользователем
+      tags:
+      - Launch
+  /api/run:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: инормация о проверяемом коде
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RunTestRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.RunTestResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.RunError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.RunError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.RunError'
+      security:
+      - Bearer: []
+      summary: Отправка кода на проверку
+      tags:
+      - Run Test
+  /api/task:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Информация о задаче
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AddTaskRequest'
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Добавление задачи
+      tags:
+      - Task
+  /api/task/{id}:
+    delete:
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Удаление задачи
+      tags:
+      - Task
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TaskDTO'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение задачи
+      tags:
+      - Task
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новая информация о задаче
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AddTaskRequest'
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Изменение задачи
+      tags:
+      - Task
+  /api/tasks:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.TaskDTO'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение всех задач
+      tags:
+      - Task
+  /api/test:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Информация о тесте
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AddTestRequest'
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Добавление теста
+      tags:
+      - Test
+  /api/test/{id}:
+    delete:
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Удаление теста
+      tags:
+      - Test
+    get:
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TestDTO'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение теста по айди
+      tags:
+      - Test
+    patch:
+      parameters:
+      - description: Test ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новая нформация о тесте
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TestDTO'
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Обновление информации о тесте
+      tags:
+      - Test
+  /api/tests:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.TestDTO'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение всех тестов
+      tags:
+      - Test
+  /api/tests/{task_id}:
+    get:
+      parameters:
+      - description: Task ID
+        in: path
+        name: task_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.TestDTO'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Получение всех тестов для конкретной задачи
+      tags:
+      - Test
+securityDefinitions:
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
